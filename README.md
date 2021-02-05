@@ -1,5 +1,7 @@
 # archiso-sb-shim
-This repo attempts to provide an easy way to create an *archiso* with **secure boot** enabled using the *shim* method with your **own keys**.
+This repo attempts to provide an easy way to create an *archiso* with **Secure Boot** enabled using the *shim* method with your **own keys**.
+
+This will help you generate an *archiso* image that can boot on a PC/laptop with Secure Boot enabled; but for this to work, you will need to already have installed your own keys in the **MOK** list with `mokutil`.
 
 ## Scripted method
 A script to automate this will hopefully come soon.
