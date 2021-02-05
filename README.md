@@ -1,5 +1,5 @@
 # archiso-sb-shim
-This repo attempts to provide an easy way to create an *archiso* with **Secure Boot** enabled using the *shim* method with your **own keys**.
+This repo attempts to provide an easy way to create an *Archlinux Live CD/USB ISO* with **Secure Boot** enabled using the *shim* method with your **own keys**.
 
 This will help you generate an *archiso* image that can boot on a PC/laptop with Secure Boot enabled.
 
