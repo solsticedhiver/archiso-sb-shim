@@ -1,15 +1,16 @@
 --- mkarchiso	2021-02-01 10:38:12.000000000 +0100
-+++ mkarchiso	2021-02-04 22:16:33.402633314 +0100
-@@ -294,6 +294,8 @@
++++ mkarchiso	2021-02-05 10:05:00.319079499 +0100
+@@ -294,6 +294,9 @@
      else
          pacstrap -C "${work_dir}/pacman.conf" -c -G -M -- "${airootfs_dir}" "${pkg_list[@]}"
      fi
 +    sbsign --key DB.key --cert DB.crt --output "${airootfs_dir}/boot/vmlinuz-linux" "${airootfs_dir}/boot/vmlinuz-linux"
 +    sbsign --key DB.key --cert DB.crt --output "${airootfs_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" "${airootfs_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi"
++    sbsign --key DB.key --cert DB.crt --output "${airootfs_dir}/usr/share/edk2-shell/x64/Shell_Full.efi" "${airootfs_dir}/usr/share/edk2-shell/x64/Shell_Full.efi"
  
      if [[ -n "${gpg_key}" ]]; then
          exec {ARCHISO_GNUPG_FD}<&-
-@@ -476,6 +478,8 @@
+@@ -476,6 +479,8 @@
      # the required image size in KiB (rounded up to the next full MiB with an additional MiB for reserved sectors)
      efiboot_imgsize="$(du -bc \
          "${airootfs_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" \
@@ -18,7 +19,7 @@
          "${airootfs_dir}/usr/share/edk2-shell/x64/Shell_Full.efi" \
          "${profile}/efiboot/" \
          "${airootfs_dir}/boot/vmlinuz-"* \
-@@ -494,7 +498,11 @@
+@@ -494,7 +499,11 @@
  
      mmd -i "${work_dir}/efiboot.img" ::/EFI ::/EFI/BOOT
      mcopy -i "${work_dir}/efiboot.img" \

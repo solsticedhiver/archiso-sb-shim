@@ -296,6 +296,7 @@ _make_packages() {
     fi
     sbsign --key DB.key --cert DB.crt --output "${airootfs_dir}/boot/vmlinuz-linux" "${airootfs_dir}/boot/vmlinuz-linux"
     sbsign --key DB.key --cert DB.crt --output "${airootfs_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" "${airootfs_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi"
+    sbsign --key DB.key --cert DB.crt --output "${airootfs_dir}/usr/share/edk2-shell/x64/Shell_Full.efi" "${airootfs_dir}/usr/share/edk2-shell/x64/Shell_Full.efi"
 
     if [[ -n "${gpg_key}" ]]; then
         exec {ARCHISO_GNUPG_FD}<&-
