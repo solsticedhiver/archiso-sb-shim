@@ -1,7 +1,11 @@
 # archiso-sb-shim
 This repo attempts to provide an easy way to create an *archiso* with **Secure Boot** enabled using the *shim* method with your **own keys**.
 
-This will help you generate an *archiso* image that can boot on a PC/laptop with Secure Boot enabled; but for this to work, you will need to already have installed your own keys in the **MOK** list with `mokutil`.
+This will help you generate an *archiso* image that can boot on a PC/laptop with Secure Boot enabled.
+
+But for this to work, you will need to already have installed your own keys in the **MOK** list with `mokutil`.
+
+If you put your *DER certificate* in the current directory (named `DB.cer`), then it will be included in the *ESP* of the *archiso*, and you will be able to enroll it during the boot of the ISO.
 
 ## Scripted method
 A script to automate this will hopefully come soon.

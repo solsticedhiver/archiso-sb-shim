@@ -1,5 +1,5 @@
 --- mkarchiso	2021-02-01 10:38:12.000000000 +0100
-+++ mkarchiso	2021-02-05 10:05:00.319079499 +0100
++++ mkarchiso	2021-02-05 13:11:31.266431733 +0100
 @@ -294,6 +294,9 @@
      else
          pacstrap -C "${work_dir}/pacman.conf" -c -G -M -- "${airootfs_dir}" "${pkg_list[@]}"
@@ -10,24 +10,48 @@
  
      if [[ -n "${gpg_key}" ]]; then
          exec {ARCHISO_GNUPG_FD}<&-
-@@ -476,6 +479,8 @@
-     # the required image size in KiB (rounded up to the next full MiB with an additional MiB for reserved sectors)
-     efiboot_imgsize="$(du -bc \
+@@ -473,14 +476,24 @@
+     local efiboot_imgsize="0"
+     _msg_info "Setting up systemd-boot for UEFI booting..."
+ 
+-    # the required image size in KiB (rounded up to the next full MiB with an additional MiB for reserved sectors)
+-    efiboot_imgsize="$(du -bc \
++    shopt -s nullglob
++    efi_files=(
          "${airootfs_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" \
 +        "${airootfs_dir}/usr/share/shim-signed/shimx64.efi" \
 +        "${airootfs_dir}/usr/share/shim-signed/mmx64.efi" \
          "${airootfs_dir}/usr/share/edk2-shell/x64/Shell_Full.efi" \
          "${profile}/efiboot/" \
          "${airootfs_dir}/boot/vmlinuz-"* \
-@@ -494,7 +499,11 @@
+         "${airootfs_dir}/boot/initramfs-"*".img" \
+-        "${airootfs_dir}/boot/"{intel-uc.img,intel-ucode.img,amd-uc.img,amd-ucode.img,early_ucode.cpio,microcode.cpio} \
++        "${airootfs_dir}/boot/"{intel-uc.img,intel-ucode.img,amd-uc.img,amd-ucode.img,early_ucode.cpio,microcode.cpio}
++    )
++    shopt -u nullglob
++    if [[ -f DB.cer ]] ;then
++        efi_files=(${efi_files[@]} DB.cer)
++    fi
++    # the required image size in KiB (rounded up to the next full MiB with an additional MiB for reserved sectors)
++    efiboot_imgsize="$(du -bc \
++        ${efi_files[@]} \
+         2>/dev/null | awk 'function ceil(x){return int(x)+(x>int(x))}
+             function byte_to_kib(x){return x/1024}
+             function mib_to_kib(x){return x*1024}
+@@ -493,8 +506,16 @@
+     mkfs.fat -C -n ARCHISO_EFI "${work_dir}/efiboot.img" "$efiboot_imgsize"
  
      mmd -i "${work_dir}/efiboot.img" ::/EFI ::/EFI/BOOT
-     mcopy -i "${work_dir}/efiboot.img" \
--        "${airootfs_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" ::/EFI/BOOT/BOOTx64.EFI
++    if [[ -f DB.cer ]] ;then
++        mcopy -i "${work_dir}/efiboot.img" \
++            DB.cer ::/EFI/BOOT/DB.cer
++    fi
++    mcopy -i "${work_dir}/efiboot.img" \
 +        "${airootfs_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" ::/EFI/BOOT/grubx64.efi
 +    mcopy -i "${work_dir}/efiboot.img" \
 +        "${airootfs_dir}/usr/share/shim-signed/mmx64.efi" ::/EFI/BOOT/mmx64.efi
-+    mcopy -i "${work_dir}/efiboot.img" \
+     mcopy -i "${work_dir}/efiboot.img" \
+-        "${airootfs_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" ::/EFI/BOOT/BOOTx64.EFI
 +        "${airootfs_dir}/usr/share/shim-signed/shimx64.efi" ::/EFI/BOOT/BOOTx64.EFI
  
      mmd -i "${work_dir}/efiboot.img" ::/loader ::/loader/entries

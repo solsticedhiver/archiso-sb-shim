@@ -476,8 +476,8 @@ _make_bootmode_uefi-x64.systemd-boot.esp() {
     local efiboot_imgsize="0"
     _msg_info "Setting up systemd-boot for UEFI booting..."
 
-    # the required image size in KiB (rounded up to the next full MiB with an additional MiB for reserved sectors)
-    efiboot_imgsize="$(du -bc \
+    shopt -s nullglob
+    efi_files=(
         "${airootfs_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" \
         "${airootfs_dir}/usr/share/shim-signed/shimx64.efi" \
         "${airootfs_dir}/usr/share/shim-signed/mmx64.efi" \
@@ -485,7 +485,15 @@ _make_bootmode_uefi-x64.systemd-boot.esp() {
         "${profile}/efiboot/" \
         "${airootfs_dir}/boot/vmlinuz-"* \
         "${airootfs_dir}/boot/initramfs-"*".img" \
-        "${airootfs_dir}/boot/"{intel-uc.img,intel-ucode.img,amd-uc.img,amd-ucode.img,early_ucode.cpio,microcode.cpio} \
+        "${airootfs_dir}/boot/"{intel-uc.img,intel-ucode.img,amd-uc.img,amd-ucode.img,early_ucode.cpio,microcode.cpio}
+    )
+    shopt -u nullglob
+    if [[ -f DB.cer ]] ;then
+        efi_files=(${efi_files[@]} DB.cer)
+    fi
+    # the required image size in KiB (rounded up to the next full MiB with an additional MiB for reserved sectors)
+    efiboot_imgsize="$(du -bc \
+        ${efi_files[@]} \
         2>/dev/null | awk 'function ceil(x){return int(x)+(x>int(x))}
             function byte_to_kib(x){return x/1024}
             function mib_to_kib(x){return x*1024}
@@ -498,6 +506,10 @@ _make_bootmode_uefi-x64.systemd-boot.esp() {
     mkfs.fat -C -n ARCHISO_EFI "${work_dir}/efiboot.img" "$efiboot_imgsize"
 
     mmd -i "${work_dir}/efiboot.img" ::/EFI ::/EFI/BOOT
+    if [[ -f DB.cer ]] ;then
+        mcopy -i "${work_dir}/efiboot.img" \
+            DB.cer ::/EFI/BOOT/DB.cer
+    fi
     mcopy -i "${work_dir}/efiboot.img" \
         "${airootfs_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" ::/EFI/BOOT/grubx64.efi
     mcopy -i "${work_dir}/efiboot.img" \
