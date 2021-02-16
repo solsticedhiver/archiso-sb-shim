@@ -22,12 +22,10 @@ if [[ ! -f DB.key ]] ;then
 fi
 
 cwd=$PWD
-customd=/tmp/customoWdwNT.d
 customd=`mktemp -d /tmp/customXXXXXX.d`
-customd=/tmp/customJeE1Bj.d/
-cd $customd
 
 build_package() {
+	cd $customd
 	echo ":: Building $1 package"
 	pkg=$1.tar.gz
 	wget "https://aur.archlinux.org/cgit/aur.git/snapshot/$pkg"
@@ -35,17 +33,17 @@ build_package() {
 	cd $1
 	makepkg
 	mv $1-*.pkg.* ..
-	cd ..
 }
 build_package shim-signed
 build_package mokutil
 
+cd $customd
 echo ":: Creating custom local repo"
 repo-add custom.db.tar.gz shim-signed-*.pkg.* mokutil-*.pkg.*
 
 cd $cwd
 echo ":: Creating custom archiso profile"
-work=`mktemp -d ./workXXXXXX`
+work=`mktemp -d $cwd/workXXXXXX`
 
 echo ":: Copying certificates"
 cp DB.{key,crt,cer} $work 2>/dev/null
@@ -64,7 +62,7 @@ patch -p0 -i $cwd/mkarchiso.patch
 
 out=`mktemp -d /tmp/outXXXXXX.d`
 echo ":: Running mkarchiso (as root)"
-sudo ./mkarchiso -o $cwd -w $out prof
+sudo ./mkarchiso -v -o $cwd -w $out prof
 
 echo ":: Cleaning up"
 if ! findmnt|grep -q $out; then
