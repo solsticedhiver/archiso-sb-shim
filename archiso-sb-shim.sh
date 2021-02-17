@@ -12,6 +12,15 @@
 # - a directory for mkarchiso /tmp/outXXXXXX.d
 # and output the resulting iso in the current directory
 
+if ! command -v mkarchiso &> /dev/null; then
+	echo "You need to install mkarchiso" >&2
+	exit 1
+fi
+if ! command -v sbsign &> /dev/null; then
+	echo "You need to install sbsigntools" >&2
+	exit 1
+fi
+
 if [[ ! -f DB.crt ]] ;then
 	echo "DB.crt not found" >&2
 	exit 1
