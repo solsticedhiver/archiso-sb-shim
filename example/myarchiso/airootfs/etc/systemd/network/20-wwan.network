@@ -2,12 +2,14 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 [Match]
-Name=wlp*
-Name=wlan*
+Name=ww*
 
 [Network]
 DHCP=yes
 IPv6PrivacyExtensions=yes
 
-[DHCP]
-RouteMetric=1024
+[DHCPv4]
+RouteMetric=2048
+
+[DHCPv6]
+RouteMetric=2048
