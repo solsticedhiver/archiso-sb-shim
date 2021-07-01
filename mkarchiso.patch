@@ -1,32 +1,33 @@
---- mkarchiso	2021-02-01 10:38:12.000000000 +0100
-+++ mkarchiso	2021-02-05 13:11:31.266431733 +0100
-@@ -294,6 +294,9 @@
-     else
-         pacstrap -C "${work_dir}/pacman.conf" -c -G -M -- "${airootfs_dir}" "${pkg_list[@]}"
+--- mkarchiso	2021-06-30 20:09:48.000000000 +0200
++++ mkarchiso	2021-07-01 09:18:53.883866619 +0200
+@@ -336,6 +336,10 @@
+         env -i "${envvars_in_chroot[@]}" pacstrap -C "${work_dir}/${buildmode}.pacman.conf" -c -G -M -- "${pacstrap_dir}" "${buildmode_pkg_list[@]}"
      fi
-+    sbsign --key DB.key --cert DB.crt --output "${airootfs_dir}/boot/vmlinuz-linux" "${airootfs_dir}/boot/vmlinuz-linux"
-+    sbsign --key DB.key --cert DB.crt --output "${airootfs_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" "${airootfs_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi"
-+    sbsign --key DB.key --cert DB.crt --output "${airootfs_dir}/usr/share/edk2-shell/x64/Shell_Full.efi" "${airootfs_dir}/usr/share/edk2-shell/x64/Shell_Full.efi"
  
++    sbsign --key DB.key --cert DB.crt --output "${pacstrap_dir}/boot/vmlinuz-linux" "${pacstrap_dir}/boot/vmlinuz-linux"
++    sbsign --key DB.key --cert DB.crt --output "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi"
++    sbsign --key DB.key --cert DB.crt --output "${pacstrap_dir}/usr/share/edk2-shell/x64/Shell_Full.efi" "${pacstrap_dir}/usr/share/edk2-shell/x64/Shell_Full.efi"
++
      if [[ -n "${gpg_key}" ]]; then
          exec {ARCHISO_GNUPG_FD}<&-
-@@ -473,14 +476,24 @@
-     local efiboot_imgsize="0"
-     _msg_info "Setting up systemd-boot for UEFI booting..."
- 
+         unset ARCHISO_GNUPG_FD
+@@ -518,14 +522,24 @@
+             _available_ucodes+=("${pacstrap_dir}/boot/${_file}")
+         fi
+     done
 -    # the required image size in KiB (rounded up to the next full MiB with an additional MiB for reserved sectors)
 -    efiboot_imgsize="$(du -bc \
 +    shopt -s nullglob
 +    efi_files=(
-         "${airootfs_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" \
-+        "${airootfs_dir}/usr/share/shim-signed/shimx64.efi" \
-+        "${airootfs_dir}/usr/share/shim-signed/mmx64.efi" \
-         "${airootfs_dir}/usr/share/edk2-shell/x64/Shell_Full.efi" \
+         "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" \
+         "${pacstrap_dir}/usr/share/edk2-shell/x64/Shell_Full.efi" \
++        "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi" \
++        "${pacstrap_dir}/usr/share/shim-signed/mmx64.efi" \
          "${profile}/efiboot/" \
-         "${airootfs_dir}/boot/vmlinuz-"* \
-         "${airootfs_dir}/boot/initramfs-"*".img" \
--        "${airootfs_dir}/boot/"{intel-uc.img,intel-ucode.img,amd-uc.img,amd-ucode.img,early_ucode.cpio,microcode.cpio} \
-+        "${airootfs_dir}/boot/"{intel-uc.img,intel-ucode.img,amd-uc.img,amd-ucode.img,early_ucode.cpio,microcode.cpio}
+         "${pacstrap_dir}/boot/vmlinuz-"* \
+         "${pacstrap_dir}/boot/initramfs-"*".img" \
+-        "${_available_ucodes[@]}" \
++        "${_available_ucodes[@]}"
 +    )
 +    shopt -u nullglob
 +    if [[ -f DB.cer ]] ;then
@@ -38,7 +39,7 @@
          2>/dev/null | awk 'function ceil(x){return int(x)+(x>int(x))}
              function byte_to_kib(x){return x/1024}
              function mib_to_kib(x){return x*1024}
-@@ -493,8 +506,16 @@
+@@ -538,8 +552,16 @@
      mkfs.fat -C -n ARCHISO_EFI "${work_dir}/efiboot.img" "$efiboot_imgsize"
  
      mmd -i "${work_dir}/efiboot.img" ::/EFI ::/EFI/BOOT
@@ -47,12 +48,12 @@
 +            DB.cer ::/EFI/BOOT/DB.cer
 +    fi
 +    mcopy -i "${work_dir}/efiboot.img" \
-+        "${airootfs_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" ::/EFI/BOOT/grubx64.efi
-+    mcopy -i "${work_dir}/efiboot.img" \
-+        "${airootfs_dir}/usr/share/shim-signed/mmx64.efi" ::/EFI/BOOT/mmx64.efi
++        "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" ::/EFI/BOOT/grubx64.efi
      mcopy -i "${work_dir}/efiboot.img" \
--        "${airootfs_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" ::/EFI/BOOT/BOOTx64.EFI
-+        "${airootfs_dir}/usr/share/shim-signed/shimx64.efi" ::/EFI/BOOT/BOOTx64.EFI
+-        "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" ::/EFI/BOOT/BOOTx64.EFI
++        "${pacstrap_dir}/usr/share/shim-signed/mmx64.efi" ::/EFI/BOOT/mmx64.efi
++     mcopy -i "${work_dir}/efiboot.img" \
++        "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi" ::/EFI/BOOT/BOOTx64.EFI
  
      mmd -i "${work_dir}/efiboot.img" ::/loader ::/loader/entries
      mcopy -i "${work_dir}/efiboot.img" "${profile}/efiboot/loader/loader.conf" ::/loader/
