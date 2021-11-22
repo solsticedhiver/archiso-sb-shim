@@ -1,5 +1,5 @@
 --- mkarchiso	2021-10-14 18:03:43.000000000 +0200
-+++ mkarchiso	2021-10-15 14:52:18.936927833 +0200
++++ mkarchiso	2021-11-22 13:19:09.205028437 +0100
 @@ -342,6 +342,10 @@
          env -u TMPDIR pacstrap -C "${work_dir}/${buildmode}.pacman.conf" -c -G -M -- "${pacstrap_dir}" "${buildmode_pkg_list[@]}"
      fi
@@ -11,7 +11,7 @@
      if [[ -n "${gpg_key}" ]]; then
          exec {ARCHISO_GNUPG_FD}<&-
          unset ARCHISO_GNUPG_FD
-@@ -521,21 +525,37 @@
+@@ -521,21 +525,39 @@
              _available_ucodes+=("${pacstrap_dir}/boot/${_file}")
          fi
      done
@@ -21,6 +21,8 @@
 +    efi_files=(
          "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" \
          "${pacstrap_dir}/usr/share/edk2-shell/x64/Shell_Full.efi" \
++        "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi" \
++        "${pacstrap_dir}/usr/share/shim-signed/mmx64.efi" \
          "${profile}/efiboot/" \
          "${pacstrap_dir}/boot/vmlinuz-"* \
          "${pacstrap_dir}/boot/initramfs-"*".img" \

@@ -529,6 +529,8 @@ _make_bootmode_uefi-x64.systemd-boot.esp() {
     efi_files=(
         "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" \
         "${pacstrap_dir}/usr/share/edk2-shell/x64/Shell_Full.efi" \
+        "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi" \
+        "${pacstrap_dir}/usr/share/shim-signed/mmx64.efi" \
         "${profile}/efiboot/" \
         "${pacstrap_dir}/boot/vmlinuz-"* \
         "${pacstrap_dir}/boot/initramfs-"*".img" \
