@@ -1,57 +1,35 @@
---- mkarchiso	2021-10-14 18:03:43.000000000 +0200
-+++ mkarchiso	2021-11-22 13:19:09.205028437 +0100
-@@ -342,6 +342,10 @@
-         env -u TMPDIR pacstrap -C "${work_dir}/${buildmode}.pacman.conf" -c -G -M -- "${pacstrap_dir}" "${buildmode_pkg_list[@]}"
-     fi
- 
-+    sbsign --key DB.key --cert DB.crt --output "${pacstrap_dir}/boot/vmlinuz-linux" "${pacstrap_dir}/boot/vmlinuz-linux"
-+    sbsign --key DB.key --cert DB.crt --output "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi"
-+    sbsign --key DB.key --cert DB.crt --output "${pacstrap_dir}/usr/share/edk2-shell/x64/Shell_Full.efi" "${pacstrap_dir}/usr/share/edk2-shell/x64/Shell_Full.efi"
-+
-     if [[ -n "${gpg_key}" ]]; then
-         exec {ARCHISO_GNUPG_FD}<&-
-         unset ARCHISO_GNUPG_FD
-@@ -521,21 +525,39 @@
-             _available_ucodes+=("${pacstrap_dir}/boot/${_file}")
-         fi
-     done
--    # Calculate the required FAT image size in bytes
--    efiboot_imgsize="$(du -bc \
-+    shopt -s nullglob
-+    efi_files=(
-         "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" \
-         "${pacstrap_dir}/usr/share/edk2-shell/x64/Shell_Full.efi" \
-+        "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi" \
-+        "${pacstrap_dir}/usr/share/shim-signed/mmx64.efi" \
-         "${profile}/efiboot/" \
-         "${pacstrap_dir}/boot/vmlinuz-"* \
-         "${pacstrap_dir}/boot/initramfs-"*".img" \
--        "${_available_ucodes[@]}" \
-+        "${_available_ucodes[@]}"
-+    )
-+    shopt -u nullglob
+--- mkarchiso	2022-05-30 09:25:33.000000000 +0200
++++ mkarchiso	2022-05-31 10:45:54.286890286 +0200
+@@ -609,18 +609,32 @@
+     # Calculate the required FAT image size in bytes
+     efiboot_files+=("${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi"
+                     "${pacstrap_dir}/usr/share/edk2-shell/x64/Shell_Full.efi"
++                    "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi"
++                    "${pacstrap_dir}/usr/share/shim-signed/mmx64.efi"
+                     "${profile}/efiboot/"
+                     "${pacstrap_dir}/boot/vmlinuz-"*
+                     "${pacstrap_dir}/boot/initramfs-"*".img"
+                     "${_available_ucodes[@]}")
 +    if [[ -f DB.cer ]] ;then
-+        efi_files=(${efi_files[@]} DB.cer)
++        efi_files+=(DB.cer)
 +    fi
-+    # Calculate the required FAT image size in bytes
-+    efiboot_imgsize="$(du -bc \
-+        ${efi_files[@]} \
+     efiboot_imgsize="$(du -bc "${efiboot_files[@]}" \
          2>/dev/null | awk 'END { print $1 }')"
      # Create a FAT image for the EFI system partition
      _make_efibootimg "$efiboot_imgsize"
  
--    # Copy systemd-boot EFI binary to the default/fallback boot path
+     # Copy systemd-boot EFI binary to the default/fallback boot path
 +    if [[ -f DB.cer ]] ;then
 +        mcopy -i "${work_dir}/efiboot.img" DB.cer ::/EFI/BOOT/DB.cer
 +    fi
 +    # Copy shim signed bootloader as default loader
-+    mcopy -i "${work_dir}/efiboot.img" \
+     mcopy -i "${work_dir}/efiboot.img" \
+-        "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" ::/EFI/BOOT/BOOTx64.EFI
 +        "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi" ::/EFI/BOOT/BOOTx64.EFI
 +    mcopy -i "${work_dir}/efiboot.img" \
 +        "${pacstrap_dir}/usr/share/shim-signed/mmx64.efi" ::/EFI/BOOT/mmx64.efi
 +    # Copy systemd-boot EFI binary as grubx64.efi chainloaded by shimx64.efi
-     mcopy -i "${work_dir}/efiboot.img" \
--        "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" ::/EFI/BOOT/BOOTx64.EFI
++    mcopy -i "${work_dir}/efiboot.img" \
 +        "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" ::/EFI/BOOT/grubx64.efi
  
      # Copy systemd-boot configuration files
