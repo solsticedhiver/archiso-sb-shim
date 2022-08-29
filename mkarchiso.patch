@@ -1,6 +1,6 @@
---- mkarchiso	2022-05-30 09:25:33.000000000 +0200
-+++ mkarchiso	2022-05-31 10:45:54.286890286 +0200
-@@ -609,18 +609,32 @@
+--- /usr/bin/mkarchiso	2022-08-28 15:30:15.000000000 +0200
++++ mkarchiso	2022-08-30 00:40:24.156967891 +0200
+@@ -744,18 +744,31 @@
      # Calculate the required FAT image size in bytes
      efiboot_files+=("${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi"
                      "${pacstrap_dir}/usr/share/edk2-shell/x64/Shell_Full.efi"
@@ -11,26 +11,26 @@
                      "${pacstrap_dir}/boot/initramfs-"*".img"
                      "${_available_ucodes[@]}")
 +    if [[ -f DB.cer ]] ;then
-+        efi_files+=(DB.cer)
++        efiboot_files+=(DB.cer)
 +    fi
-     efiboot_imgsize="$(du -bc "${efiboot_files[@]}" \
+     efiboot_imgsize="$(du -bcs -- "${efiboot_files[@]}" \
          2>/dev/null | awk 'END { print $1 }')"
      # Create a FAT image for the EFI system partition
      _make_efibootimg "$efiboot_imgsize"
  
-     # Copy systemd-boot EFI binary to the default/fallback boot path
-+    if [[ -f DB.cer ]] ;then
-+        mcopy -i "${work_dir}/efiboot.img" DB.cer ::/EFI/BOOT/DB.cer
-+    fi
-+    # Copy shim signed bootloader as default loader
-     mcopy -i "${work_dir}/efiboot.img" \
+-    # Copy systemd-boot EFI binary to the default/fallback boot path
++    # Copy shim EFI binary to the default/fallback boot path
+     mcopy -i "${efibootimg}" \
 -        "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" ::/EFI/BOOT/BOOTx64.EFI
 +        "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi" ::/EFI/BOOT/BOOTx64.EFI
-+    mcopy -i "${work_dir}/efiboot.img" \
++    mcopy -i "${efibootimg}" \
 +        "${pacstrap_dir}/usr/share/shim-signed/mmx64.efi" ::/EFI/BOOT/mmx64.efi
 +    # Copy systemd-boot EFI binary as grubx64.efi chainloaded by shimx64.efi
-+    mcopy -i "${work_dir}/efiboot.img" \
++    mcopy -i "${efiboot.img}" \
 +        "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" ::/EFI/BOOT/grubx64.efi
++    if [[ -f DB.cer ]] ;then
++        mcopy -i "${efiboot.img}" DB.cer ::/EFI/BOOT/DB.cer
++    fi
  
      # Copy systemd-boot configuration files
-     mmd -i "${work_dir}/efiboot.img" ::/loader ::/loader/entries
+     mmd -i "${efibootimg}" ::/loader ::/loader/entries
