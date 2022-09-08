@@ -356,6 +356,16 @@ _make_packages() {
     fi
 
     _msg_info "Done! Packages installed successfully."
+
+    # sign the kernel
+    for kernel in "${pacstrap_dir}/boot/vmlinuz-"*; do
+        sbsign --key DB.key --cert DB.crt --output "$kernel" "$kernel"
+    done
+    # signing shimx64.efi and shell once and for all
+    sbsign --key DB.key --cert DB.crt --output "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi" \
+        "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi"
+    sbsign --key DB.key --cert DB.crt --output "${pacstrap_dir}/usr/share/edk2-shell/x64/Shell_Full.efi" \
+        "${pacstrap_dir}/usr/share/edk2-shell/x64/Shell_Full.efi"
 }
 
 # Customize installation.
@@ -677,8 +687,8 @@ _make_bootmode_uefi-x64.grub.esp() {
                       --locales="en@quot" \
                       --themes="" \
                       --sbat=/usr/share/grub/sbat.csv \
-                      --disable-shim-lock \
                       -o "${work_dir}/BOOTx64.EFI" "boot/grub/grub.cfg=${work_dir}/grub-embed.cfg"
+
     # Add GRUB to the list of files used to calculate the required FAT image size.
     efiboot_files+=("${work_dir}/BOOTx64.EFI"
                     "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi"

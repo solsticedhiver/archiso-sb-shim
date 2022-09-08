@@ -1,7 +1,29 @@
---- mkarchiso	2022-09-08 17:03:19.095168448 +0200
-+++ mkarchiso	2022-09-08 17:28:14.561017225 +0200
-@@ -681,15 +681,29 @@
+--- mkarchiso	2022-08-28 15:30:15.000000000 +0200
++++ mkarchiso	2022-09-08 18:17:52.769125637 +0200
+@@ -356,6 +356,16 @@
+     fi
+ 
+     _msg_info "Done! Packages installed successfully."
++
++    # sign the kernel
++    for kernel in "${pacstrap_dir}/boot/vmlinuz-"*; do
++        sbsign --key DB.key --cert DB.crt --output "$kernel" "$kernel"
++    done
++    # signing shimx64.efi and shell once and for all
++    sbsign --key DB.key --cert DB.crt --output "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi" \
++        "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi"
++    sbsign --key DB.key --cert DB.crt --output "${pacstrap_dir}/usr/share/edk2-shell/x64/Shell_Full.efi" \
++        "${pacstrap_dir}/usr/share/edk2-shell/x64/Shell_Full.efi"
+ }
+ 
+ # Customize installation.
+@@ -677,19 +687,33 @@
+                       --locales="en@quot" \
+                       --themes="" \
+                       --sbat=/usr/share/grub/sbat.csv \
+-                      --disable-shim-lock \
                        -o "${work_dir}/BOOTx64.EFI" "boot/grub/grub.cfg=${work_dir}/grub-embed.cfg"
++
      # Add GRUB to the list of files used to calculate the required FAT image size.
      efiboot_files+=("${work_dir}/BOOTx64.EFI"
 +                    "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi"
@@ -32,7 +54,7 @@
  
      # Copy GRUB files
      _run_once _make_common_bootmode_grub_copy_to_efibootimg
-@@ -716,8 +730,18 @@
+@@ -716,8 +740,18 @@
      _msg_info "Preparing an /EFI directory for the ISO 9660 file system..."
      install -d -m 0755 -- "${isofs_dir}/EFI/BOOT"
  
@@ -52,7 +74,7 @@
  
      # Copy GRUB files
      _run_once _make_common_bootmode_grub_copy_to_isofs
-@@ -744,18 +768,31 @@
+@@ -744,18 +778,31 @@
      # Calculate the required FAT image size in bytes
      efiboot_files+=("${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi"
                      "${pacstrap_dir}/usr/share/edk2-shell/x64/Shell_Full.efi"
@@ -72,10 +94,10 @@
  
 -    # Copy systemd-boot EFI binary to the default/fallback boot path
 +    # Copy shim EFI binary to the default/fallback boot path
-+    mcopy -i "${efibootimg}" \
-+        "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi" ::/EFI/BOOT/BOOTx64.EFI
      mcopy -i "${efibootimg}" \
 -        "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" ::/EFI/BOOT/BOOTx64.EFI
++        "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi" ::/EFI/BOOT/BOOTx64.EFI
++    mcopy -i "${efibootimg}" \
 +        "${pacstrap_dir}/usr/share/shim-signed/mmx64.efi" ::/EFI/BOOT/mmx64.efi
 +    # Copy systemd-boot EFI binary as grubx64.efi chainloaded by shimx64.efi
 +    mcopy -i "${efibootimg}" \
@@ -86,7 +108,7 @@
  
      # Copy systemd-boot configuration files
      mmd -i "${efibootimg}" ::/loader ::/loader/entries
-@@ -792,9 +829,19 @@
+@@ -792,9 +839,19 @@
      _msg_info "Preparing an /EFI directory for the ISO 9660 file system..."
      install -d -m 0755 -- "${isofs_dir}/EFI/BOOT"
  
