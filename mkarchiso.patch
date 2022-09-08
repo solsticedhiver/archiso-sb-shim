@@ -1,6 +1,58 @@
---- mkarchiso	2022-08-28 15:30:15.000000000 +0200
-+++ mkarchiso	2022-08-30 00:40:24.156967891 +0200
-@@ -744,18 +744,31 @@
+--- mkarchiso	2022-09-08 17:03:19.095168448 +0200
++++ mkarchiso	2022-09-08 17:28:14.561017225 +0200
+@@ -681,15 +681,29 @@
+                       -o "${work_dir}/BOOTx64.EFI" "boot/grub/grub.cfg=${work_dir}/grub-embed.cfg"
+     # Add GRUB to the list of files used to calculate the required FAT image size.
+     efiboot_files+=("${work_dir}/BOOTx64.EFI"
++                    "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi"
++                    "${pacstrap_dir}/usr/share/shim-signed/mmx64.efi"
+                     "${pacstrap_dir}/usr/share/edk2-shell/x64/Shell_Full.efi")
++    if [[ -f DB.cer ]] ;then
++        efiboot_files+=(DB.cer)
++    fi
+ 
+     efiboot_imgsize="$(du -bcs -- "${efiboot_files[@]}" 2>/dev/null | awk 'END { print $1 }')"
+ 
+     # Create a FAT image for the EFI system partition
+     _make_efibootimg "$efiboot_imgsize"
+ 
+-    # Copy GRUB EFI binary to the default/fallback boot path
+-    mcopy -i "${efibootimg}" "${work_dir}/BOOTx64.EFI" ::/EFI/BOOT/BOOTx64.EFI
++    # Copy shim EFI binary to the default/fallback boot path
++     mcopy -i "${efibootimg}" \
++        "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi" ::/EFI/BOOT/BOOTx64.EFI
++    mcopy -i "${efibootimg}" \
++        "${pacstrap_dir}/usr/share/shim-signed/mmx64.efi" ::/EFI/BOOT/mmx64.efi
++    # Copy GRUB EFI binary as grubx64.efi chhainloaded by shimx64.efi
++    mcopy -i "${efibootimg}" "${work_dir}/BOOTx64.EFI" ::/EFI/BOOT/grubx64.efi
++
++    if [[ -f DB.cer ]] ;then
++        mcopy -i "${efibootimg}" DB.cer ::/EFI/BOOT/DB.cer
++    fi
+ 
+     # Copy GRUB files
+     _run_once _make_common_bootmode_grub_copy_to_efibootimg
+@@ -716,8 +730,18 @@
+     _msg_info "Preparing an /EFI directory for the ISO 9660 file system..."
+     install -d -m 0755 -- "${isofs_dir}/EFI/BOOT"
+ 
++    # Copy shim EFI binary to the default/fallback boot path
++    install -m 0644 -- "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi" \
++        "${isofs_dir}/EFI/BOOT/BOOTx64.EFI"
++    install -m 0644 -- "${pacstrap_dir}/usr/share/shim-signed/mmx64.efi" \
++        "${isofs_dir}/EFI/BOOT/mmx64.efi"
++
+     # Copy GRUB EFI binary to the default/fallback boot path
+-    install -m 0644 -- "${work_dir}/BOOTx64.EFI" "${isofs_dir}/EFI/BOOT/BOOTx64.EFI"
++    install -m 0644 -- "${work_dir}/BOOTx64.EFI" "${isofs_dir}/EFI/BOOT/grubx64.efi"
++
++    if [[ -f DB.cer ]] ;then
++        install -m 0644 DB.cer "${isofs_dir}/EFI/BOOT/DB.cer"
++    fi
+ 
+     # Copy GRUB files
+     _run_once _make_common_bootmode_grub_copy_to_isofs
+@@ -744,18 +768,31 @@
      # Calculate the required FAT image size in bytes
      efiboot_files+=("${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi"
                      "${pacstrap_dir}/usr/share/edk2-shell/x64/Shell_Full.efi"
@@ -20,10 +72,10 @@
  
 -    # Copy systemd-boot EFI binary to the default/fallback boot path
 +    # Copy shim EFI binary to the default/fallback boot path
++    mcopy -i "${efibootimg}" \
++        "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi" ::/EFI/BOOT/BOOTx64.EFI
      mcopy -i "${efibootimg}" \
 -        "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" ::/EFI/BOOT/BOOTx64.EFI
-+        "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi" ::/EFI/BOOT/BOOTx64.EFI
-+    mcopy -i "${efibootimg}" \
 +        "${pacstrap_dir}/usr/share/shim-signed/mmx64.efi" ::/EFI/BOOT/mmx64.efi
 +    # Copy systemd-boot EFI binary as grubx64.efi chainloaded by shimx64.efi
 +    mcopy -i "${efibootimg}" \
@@ -34,3 +86,24 @@
  
      # Copy systemd-boot configuration files
      mmd -i "${efibootimg}" ::/loader ::/loader/entries
+@@ -792,9 +829,19 @@
+     _msg_info "Preparing an /EFI directory for the ISO 9660 file system..."
+     install -d -m 0755 -- "${isofs_dir}/EFI/BOOT"
+ 
++    # Copy shim EFI binary to the default/fallback boot path
+     # Copy systemd-boot EFI binary to the default/fallback boot path
+-    install -m 0644 -- "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" \
++    install -m 0644 -- "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi" \
+         "${isofs_dir}/EFI/BOOT/BOOTx64.EFI"
++    install -m 0644 -- "${pacstrap_dir}/usr/share/shim-signed/mmx64.efi" \
++        "${isofs_dir}/EFI/BOOT/mmx64.efi"
++
++    # Copy systemd-boot EFI binary as grubx64.efi chainloaded by shimx64.efi
++    install -m 0644 "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" \
++        "${isofs_dir}/EFI/BOOT/grubx64.efi"
++    if [[ -f DB.cer ]] ;then
++        install -m 0644 DB.cer $"{isofs_dir}/EFI/BOOT/DB.cer"
++    fi
+ 
+     # Copy systemd-boot configuration files
+     install -d -m 0755 -- "${isofs_dir}/loader/entries"
