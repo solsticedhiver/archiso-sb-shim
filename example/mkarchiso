@@ -361,11 +361,9 @@ _make_packages() {
     for kernel in "${pacstrap_dir}/boot/vmlinuz-"*; do
         sbsign --key DB.key --cert DB.crt --output "$kernel" "$kernel"
     done
-    # signing shimx64.efi and shell once and for all
-    sbsign --key DB.key --cert DB.crt --output "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi" \
-        "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi"
-    sbsign --key DB.key --cert DB.crt --output "${pacstrap_dir}/usr/share/shim-signed/shimia32.efi" \
-        "${pacstrap_dir}/usr/share/shim-signed/shimia32.efi"
+    # signing grubx64.efi and shell once and for all
+    sbsign --key DB.key --cert DB.crt --output "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" \
+        "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi"
     sbsign --key DB.key --cert DB.crt --output "${pacstrap_dir}/usr/share/edk2-shell/x64/Shell_Full.efi" \
         "${pacstrap_dir}/usr/share/edk2-shell/x64/Shell_Full.efi"
     sbsign --key DB.key --cert DB.crt --output "${pacstrap_dir}/usr/share/edk2-shell/ia32/Shell_Full.efi" \
@@ -615,6 +613,9 @@ _make_bootmode_uefi-ia32.grub.esp() {
                       --themes="" \
                       --sbat=/usr/share/grub/sbat.csv \
                       -o "${work_dir}/BOOTIA32.EFI" "boot/grub/grub.cfg=${work_dir}/grub-embed.cfg"
+
+    sbsign --key DB.key --cert DB.crt --output "${work_dir}/BOOTIA32.EFI" "${work_dir}/BOOTIA32.EFI"
+
     # Add GRUB to the list of files used to calculate the required FAT image size.
     efiboot_files+=("${work_dir}/BOOTIA32.EFI"
                     "${pacstrap_dir}/usr/share/shim-signed/shimia32.efi"
@@ -641,7 +642,7 @@ _make_bootmode_uefi-ia32.grub.esp() {
     mcopy -i "${efibootimg}" "${work_dir}/BOOTIA32.EFI" ::/EFI/BOOT/grubia32.efi
 
     if [[ -f DB.cer ]] ;then
-        mcopy -n -i "${efibootimg}" DB.cer ::/EFI/BOOT/DB.cer
+        mcopy -o -i "${efibootimg}" DB.cer ::/EFI/BOOT/DB.cer
     fi
 
     # Copy GRUB files
@@ -713,6 +714,8 @@ _make_bootmode_uefi-x64.grub.esp() {
                       --sbat=/usr/share/grub/sbat.csv \
                       -o "${work_dir}/BOOTx64.EFI" "boot/grub/grub.cfg=${work_dir}/grub-embed.cfg"
 
+    sbsign --key DB.key --cert DB.crt --output "${work_dir}/BOOTx64.EFI" "${work_dir}/BOOTx64.EFI"
+
     # Add GRUB to the list of files used to calculate the required FAT image size.
     efiboot_files+=("${work_dir}/BOOTx64.EFI"
                     "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi"
@@ -736,7 +739,7 @@ _make_bootmode_uefi-x64.grub.esp() {
     mcopy -i "${efibootimg}" "${work_dir}/BOOTx64.EFI" ::/EFI/BOOT/grubx64.efi
 
     if [[ -f DB.cer ]] ;then
-        mcopy -n -i "${efibootimg}" DB.cer ::/EFI/BOOT/DB.cer
+        mcopy -i "${efibootimg}" DB.cer ::/EFI/BOOT/DB.cer
     fi
 
     # Copy GRUB files
@@ -825,7 +828,7 @@ _make_bootmode_uefi-x64.systemd-boot.esp() {
     mcopy -i "${efibootimg}" \
         "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" ::/EFI/BOOT/grubx64.efi
     if [[ -f DB.cer ]] ;then
-        mcopy -n -i "${efibootimg}" DB.cer ::/EFI/BOOT/DB.cer
+        mcopy -i "${efibootimg}" DB.cer ::/EFI/BOOT/DB.cer
     fi
 
     # Copy systemd-boot configuration files
