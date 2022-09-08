@@ -1,5 +1,5 @@
 --- mkarchiso	2022-08-28 15:30:15.000000000 +0200
-+++ mkarchiso	2022-09-08 19:06:09.772186424 +0200
++++ mkarchiso	2022-09-08 19:27:16.266395768 +0200
 @@ -356,6 +356,20 @@
      fi
  
@@ -49,7 +49,7 @@
 +    mcopy -i "${efibootimg}" "${work_dir}/BOOTIA32.EFI" ::/EFI/BOOT/grubia32.efi
 +
 +    if [[ -f DB.cer ]] ;then
-+        mcopy -i "${efibootimg}" DB.cer ::/EFI/BOOT/DB.cer
++        mcopy -n -i "${efibootimg}" DB.cer ::/EFI/BOOT/DB.cer
 +    fi
  
      # Copy GRUB files
@@ -106,7 +106,7 @@
 +    mcopy -i "${efibootimg}" "${work_dir}/BOOTx64.EFI" ::/EFI/BOOT/grubx64.efi
 +
 +    if [[ -f DB.cer ]] ;then
-+        mcopy -i "${efibootimg}" DB.cer ::/EFI/BOOT/DB.cer
++        mcopy -n -i "${efibootimg}" DB.cer ::/EFI/BOOT/DB.cer
 +    fi
  
      # Copy GRUB files
@@ -160,7 +160,7 @@
 -        "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" ::/EFI/BOOT/BOOTx64.EFI
 +        "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" ::/EFI/BOOT/grubx64.efi
 +    if [[ -f DB.cer ]] ;then
-+        mcopy -i "${efibootimg}" DB.cer ::/EFI/BOOT/DB.cer
++        mcopy -n -i "${efibootimg}" DB.cer ::/EFI/BOOT/DB.cer
 +    fi
  
      # Copy systemd-boot configuration files
