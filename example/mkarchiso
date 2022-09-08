@@ -764,10 +764,10 @@ _make_bootmode_uefi-x64.systemd-boot.esp() {
     mcopy -i "${efibootimg}" \
         "${pacstrap_dir}/usr/share/shim-signed/mmx64.efi" ::/EFI/BOOT/mmx64.efi
     # Copy systemd-boot EFI binary as grubx64.efi chainloaded by shimx64.efi
-    mcopy -i "${efiboot.img}" \
+    mcopy -i "${efibootimg}" \
         "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" ::/EFI/BOOT/grubx64.efi
     if [[ -f DB.cer ]] ;then
-        mcopy -i "${efiboot.img}" DB.cer ::/EFI/BOOT/DB.cer
+        mcopy -i "${efibootimg}" DB.cer ::/EFI/BOOT/DB.cer
     fi
 
     # Copy systemd-boot configuration files

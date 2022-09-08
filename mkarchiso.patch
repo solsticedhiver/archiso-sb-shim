@@ -1,4 +1,4 @@
---- /usr/bin/mkarchiso	2022-08-28 15:30:15.000000000 +0200
+--- mkarchiso	2022-08-28 15:30:15.000000000 +0200
 +++ mkarchiso	2022-08-30 00:40:24.156967891 +0200
 @@ -744,18 +744,31 @@
      # Calculate the required FAT image size in bytes
@@ -26,10 +26,10 @@
 +    mcopy -i "${efibootimg}" \
 +        "${pacstrap_dir}/usr/share/shim-signed/mmx64.efi" ::/EFI/BOOT/mmx64.efi
 +    # Copy systemd-boot EFI binary as grubx64.efi chainloaded by shimx64.efi
-+    mcopy -i "${efiboot.img}" \
++    mcopy -i "${efibootimg}" \
 +        "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" ::/EFI/BOOT/grubx64.efi
 +    if [[ -f DB.cer ]] ;then
-+        mcopy -i "${efiboot.img}" DB.cer ::/EFI/BOOT/DB.cer
++        mcopy -i "${efibootimg}" DB.cer ::/EFI/BOOT/DB.cer
 +    fi
  
      # Copy systemd-boot configuration files
