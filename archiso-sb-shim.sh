@@ -30,6 +30,13 @@ if [[ ! -f DB.key ]] ;then
 	exit 1
 fi
 
+verbose="false"
+if [[ "$1" == "-v" ]] ;then
+	verbose="true"
+else
+	echo "Use -v flag to get verbose output of mkarchiso"
+fi
+
 cwd=$PWD
 customd=`mktemp -d /tmp/customXXXXXX.d`
 
@@ -71,7 +78,11 @@ patch -p0 -i $cwd/mkarchiso.patch
 
 out=`mktemp -d /tmp/outXXXXXX.d`
 echo ":: Running mkarchiso (as root)"
-sudo ./mkarchiso -v -o $cwd -w $out prof
+if [[ "$verbose" == "true" ]] ;then
+	sudo ./mkarchiso -v -o $cwd -w $out prof
+else
+	sudo ./mkarchiso -o $cwd -w $out prof
+fi
 
 echo ":: Cleaning up"
 if ! findmnt|grep -q $out; then
