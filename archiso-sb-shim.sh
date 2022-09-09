@@ -34,7 +34,7 @@ verbose="false"
 if [[ "$1" == "-v" ]] ;then
 	verbose="true"
 else
-	echo "Use -v flag to get verbose output of mkarchiso"
+	echo "Note: use the '-v' flag to get verbose output of mkarchiso"
 fi
 
 cwd=$PWD
@@ -42,12 +42,13 @@ customd=`mktemp -d /tmp/customXXXXXX.d`
 
 build_package() {
 	cd $customd
-	echo ":: Building $1 package"
 	pkg=$1.tar.gz
-	wget "https://aur.archlinux.org/cgit/aur.git/snapshot/$pkg"
-	tar xzvf $pkg
+	echo ":: Downloading $1 from AUR"
+	wget --quiet "https://aur.archlinux.org/cgit/aur.git/snapshot/$pkg"
+	tar xzf $pkg
+	echo ":: Building $1 package"
 	cd $1
-	makepkg
+	BUILDDIR="." PKGDEST="." SRCDEST="." iSRCPKGDEST="." makepkg
 	mv $1-*.pkg.* ..
 }
 build_package shim-signed
