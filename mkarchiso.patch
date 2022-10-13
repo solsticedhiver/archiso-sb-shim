@@ -184,7 +184,7 @@
 +    install -m 0644 "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" \
 +        "${isofs_dir}/EFI/BOOT/grubx64.efi"
 +    if [[ -f DB.cer ]] ;then
-+        install -m 0644 DB.cer $"{isofs_dir}/EFI/BOOT/DB.cer"
++        install -m 0644 DB.cer "${isofs_dir}/EFI/BOOT/DB.cer"
 +    fi
  
      # Copy systemd-boot configuration files
