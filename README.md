@@ -5,6 +5,8 @@ But for this to work, you will need to already have installed your own keys in t
 
 Or, if you put your *DER certificate* in the current directory (named `DB.cer`), then it will be included in the *ESP* of the *archiso*, and you will be able to enroll it during the boot of the ISO.
 
+Note: This will not install an archlinux ready to boot with Secure Boot though. You will have to complete the needed steps to make it work, by yourself.
+
 ## Scripted method
 The script `archiso-sb-shim.sh` automates the method described below. This is a very basic script; use at your own risk.
 
