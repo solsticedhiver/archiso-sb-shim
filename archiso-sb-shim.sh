@@ -11,6 +11,9 @@
 # - a working directory workXXXXX in the current directory
 # - a directory for mkarchiso /tmp/outXXXXXX.d
 # and output the resulting iso in the current directory
+# and then clean-up those tmp dirs
+
+# DEPENDS ON: sudo, findmnt [util-linux], sbsign [sbsigntools], mkarchiso [archiso] (obviously)
 
 usage() {
 	echo "Usage: $0 [-h|-v]"
@@ -59,7 +62,7 @@ build_package() {
 	tar xzf $pkg
 	echo ":: Building $1 package"
 	cd $1
-	BUILDDIR="." PKGDEST="." SRCDEST="." iSRCPKGDEST="." makepkg
+	BUILDDIR="." PKGDEST="." SRCDEST="." SRCPKGDEST="." makepkg
 	mv $1-*.pkg.* ..
 }
 build_package shim-signed
