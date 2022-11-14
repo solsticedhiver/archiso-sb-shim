@@ -12,6 +12,12 @@
 # - a directory for mkarchiso /tmp/outXXXXXX.d
 # and output the resulting iso in the current directory
 
+usage() {
+	echo "Usage: $0 [-h|-v]"
+	echo "     -h  Display this help"
+	echo "     -v  Verbose output when building the iso (output of mkarchiso)"
+}
+
 if ! command -v mkarchiso &> /dev/null; then
 	echo "You need to install mkarchiso" >&2
 	exit 1
@@ -28,6 +34,11 @@ fi
 if [[ ! -f DB.key ]] ;then
 	echo "DB.key not found" >&2
 	exit 1
+fi
+
+if [[ "$1" == "-h" ]] ;then
+	usage
+	exit 0
 fi
 
 verbose="false"
@@ -52,11 +63,10 @@ build_package() {
 	mv $1-*.pkg.* ..
 }
 build_package shim-signed
-build_package mokutil
 
 cd $customd
 echo ":: Creating custom local repo"
-repo-add custom.db.tar.gz shim-signed-*.pkg.* mokutil-*.pkg.*
+repo-add custom.db.tar.gz shim-signed-*.pkg.*
 
 cd $cwd
 echo ":: Creating custom archiso profile"
