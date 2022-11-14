@@ -18,6 +18,18 @@ usage() {
 	echo "     -v  Verbose output when building the iso (output of mkarchiso)"
 }
 
+if [[ "$1" == "-h" ]] ;then
+	usage
+	exit 0
+fi
+
+verbose="false"
+if [[ "$1" == "-v" ]] ;then
+	verbose="true"
+else
+	echo "Note: use the '-v' flag to get output of mkarchiso"
+fi
+
 if ! command -v mkarchiso &> /dev/null; then
 	echo "You need to install mkarchiso" >&2
 	exit 1
@@ -34,18 +46,6 @@ fi
 if [[ ! -f DB.key ]] ;then
 	echo "DB.key not found" >&2
 	exit 1
-fi
-
-if [[ "$1" == "-h" ]] ;then
-	usage
-	exit 0
-fi
-
-verbose="false"
-if [[ "$1" == "-v" ]] ;then
-	verbose="true"
-else
-	echo "Note: use the '-v' flag to get verbose output of mkarchiso"
 fi
 
 cwd=$PWD
