@@ -1,6 +1,6 @@
---- mkarchiso	2022-09-08 20:22:02.431131602 +0200
-+++ mkarchiso	2022-09-08 20:30:16.527573316 +0200
-@@ -356,6 +356,18 @@
+--- mkarchiso	2023-08-29 22:47:52.000000000 +0200
++++ mkarchiso	2023-08-30 10:11:39.038622345 +0200
+@@ -374,6 +374,18 @@
      fi
  
      _msg_info "Done! Packages installed successfully."
@@ -19,12 +19,12 @@
  }
  
  # Customize installation.
-@@ -600,10 +612,14 @@
-                       --locales="en@quot" \
-                       --themes="" \
-                       --sbat=/usr/share/grub/sbat.csv \
--                      --disable-shim-lock \
-                       -o "${work_dir}/BOOTIA32.EFI" "boot/grub/grub.cfg=${work_dir}/grub-embed.cfg"
+@@ -656,10 +668,14 @@
+         --locales="en@quot" \
+         --themes="" \
+         --sbat=/usr/share/grub/sbat.csv \
+-        --disable-shim-lock \
+         -o "${work_dir}/BOOTIA32.EFI" "boot/grub/grub.cfg=${work_dir}/grub-embed.cfg"
 +
 +    sbsign --key DB.key --cert DB.crt --output "${work_dir}/BOOTIA32.EFI" "${work_dir}/BOOTIA32.EFI"
 +
@@ -35,7 +35,7 @@
                      "${pacstrap_dir}/usr/share/edk2-shell/ia32/Shell_Full.efi")
  
      if [[ " ${bootmodes[*]} " =~ uefi-x64.systemd-boot.esp ]]; then
-@@ -617,8 +633,17 @@
+@@ -673,8 +689,17 @@
          _make_efibootimg "$efiboot_imgsize"
      fi
  
@@ -54,8 +54,8 @@
 +    fi
  
      # Copy GRUB files
-     _run_once _make_common_bootmode_grub_copy_to_efibootimg
-@@ -645,8 +670,18 @@
+     _run_once _make_common_bootmode_grub_copy_to_isofs
+@@ -701,8 +726,18 @@
      _msg_info "Preparing an /EFI directory for the ISO 9660 file system..."
      install -d -m 0755 -- "${isofs_dir}/EFI/BOOT"
  
@@ -75,12 +75,12 @@
  
      # Copy GRUB configuration files
      _run_once _make_common_bootmode_grub_copy_to_isofs
-@@ -677,19 +712,35 @@
-                       --locales="en@quot" \
-                       --themes="" \
-                       --sbat=/usr/share/grub/sbat.csv \
--                      --disable-shim-lock \
-                       -o "${work_dir}/BOOTx64.EFI" "boot/grub/grub.cfg=${work_dir}/grub-embed.cfg"
+@@ -733,19 +768,35 @@
+         --locales="en@quot" \
+         --themes="" \
+         --sbat=/usr/share/grub/sbat.csv \
+-        --disable-shim-lock \
+         -o "${work_dir}/BOOTx64.EFI" "boot/grub/grub.cfg=${work_dir}/grub-embed.cfg"
 +
 +    sbsign --key DB.key --cert DB.crt --output "${work_dir}/BOOTx64.EFI" "${work_dir}/BOOTx64.EFI"
 +
@@ -113,8 +113,8 @@
 +    fi
  
      # Copy GRUB files
-     _run_once _make_common_bootmode_grub_copy_to_efibootimg
-@@ -716,8 +767,18 @@
+     _run_once _make_common_bootmode_grub_copy_to_isofs
+@@ -779,8 +830,18 @@
      _msg_info "Preparing an /EFI directory for the ISO 9660 file system..."
      install -d -m 0755 -- "${isofs_dir}/EFI/BOOT"
  
@@ -134,7 +134,7 @@
  
      # Copy GRUB files
      _run_once _make_common_bootmode_grub_copy_to_isofs
-@@ -744,18 +805,31 @@
+@@ -807,18 +868,31 @@
      # Calculate the required FAT image size in bytes
      efiboot_files+=("${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi"
                      "${pacstrap_dir}/usr/share/edk2-shell/x64/Shell_Full.efi"
@@ -168,7 +168,7 @@
  
      # Copy systemd-boot configuration files
      mmd -i "${efibootimg}" ::/loader ::/loader/entries
-@@ -792,9 +866,19 @@
+@@ -856,9 +930,19 @@
      _msg_info "Preparing an /EFI directory for the ISO 9660 file system..."
      install -d -m 0755 -- "${isofs_dir}/EFI/BOOT"
  
