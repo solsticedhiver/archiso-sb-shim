@@ -1,5 +1,5 @@
---- mkarchiso	2023-08-29 22:47:52.000000000 +0200
-+++ mkarchiso	2023-08-30 10:11:39.038622345 +0200
+--- mkarchiso	2023-09-30 10:18:35.000000000 +0200
++++ mkarchiso	2023-11-20 19:20:49.264412485 +0100
 @@ -374,6 +374,18 @@
      fi
  
@@ -19,7 +19,7 @@
  }
  
  # Customize installation.
-@@ -656,10 +668,14 @@
+@@ -694,11 +706,18 @@
          --locales="en@quot" \
          --themes="" \
          --sbat=/usr/share/grub/sbat.csv \
@@ -33,9 +33,13 @@
 +                    "${pacstrap_dir}/usr/share/shim-signed/shimia32.efi"
 +                    "${pacstrap_dir}/usr/share/shim-signed/mmia32.efi"
                      "${pacstrap_dir}/usr/share/edk2-shell/ia32/Shell_Full.efi")
++    if [[ -f DB.cer ]] ;then
++        efiboot_files+=(DB.cer)
++    fi
  
      if [[ " ${bootmodes[*]} " =~ uefi-x64.systemd-boot.esp ]]; then
-@@ -673,8 +689,17 @@
+         # TODO: Remove this branch.
+@@ -711,8 +730,17 @@
          _make_efibootimg "$efiboot_imgsize"
      fi
  
@@ -55,7 +59,7 @@
  
      # Copy GRUB files
      _run_once _make_common_bootmode_grub_copy_to_isofs
-@@ -701,8 +726,18 @@
+@@ -739,8 +767,18 @@
      _msg_info "Preparing an /EFI directory for the ISO 9660 file system..."
      install -d -m 0755 -- "${isofs_dir}/EFI/BOOT"
  
@@ -75,7 +79,7 @@
  
      # Copy GRUB configuration files
      _run_once _make_common_bootmode_grub_copy_to_isofs
-@@ -733,19 +768,35 @@
+@@ -771,19 +809,35 @@
          --locales="en@quot" \
          --themes="" \
          --sbat=/usr/share/grub/sbat.csv \
@@ -114,7 +118,7 @@
  
      # Copy GRUB files
      _run_once _make_common_bootmode_grub_copy_to_isofs
-@@ -779,8 +830,18 @@
+@@ -817,8 +871,18 @@
      _msg_info "Preparing an /EFI directory for the ISO 9660 file system..."
      install -d -m 0755 -- "${isofs_dir}/EFI/BOOT"
  
@@ -134,23 +138,19 @@
  
      # Copy GRUB files
      _run_once _make_common_bootmode_grub_copy_to_isofs
-@@ -807,18 +868,31 @@
-     # Calculate the required FAT image size in bytes
-     efiboot_files+=("${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi"
-                     "${pacstrap_dir}/usr/share/edk2-shell/x64/Shell_Full.efi"
-+                    "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi"
-+                    "${pacstrap_dir}/usr/share/shim-signed/mmx64.efi"
-                     "${profile}/efiboot/"
+@@ -855,6 +919,9 @@
                      "${pacstrap_dir}/boot/vmlinuz-"*
                      "${pacstrap_dir}/boot/initramfs-"*".img"
                      "${_available_ucodes[@]}")
 +    if [[ -f DB.cer ]] ;then
 +        efiboot_files+=(DB.cer)
 +    fi
-     efiboot_imgsize="$(du -bcs -- "${efiboot_files[@]}" \
-         2>/dev/null | awk 'END { print $1 }')"
+     efiboot_imgsize="$(du -bcs -- "${efiboot_files[@]}" 2>/dev/null | awk 'END { print $1 }')"
      # Create a FAT image for the EFI system partition
      _make_efibootimg "$efiboot_imgsize"
+@@ -895,9 +962,17 @@
+ 
+     _run_once _make_common_bootmode_systemd-boot
  
 -    # Copy systemd-boot EFI binary to the default/fallback boot path
 +    # Copy shim EFI binary to the default/fallback boot path
@@ -167,14 +167,14 @@
 +    fi
  
      # Copy systemd-boot configuration files
-     mmd -i "${efibootimg}" ::/loader ::/loader/entries
-@@ -856,9 +930,19 @@
+     _run_once _make_common_bootmode_systemd-boot_conf.esp
+@@ -927,9 +1002,18 @@
      _msg_info "Preparing an /EFI directory for the ISO 9660 file system..."
      install -d -m 0755 -- "${isofs_dir}/EFI/BOOT"
  
-+    # Copy shim EFI binary to the default/fallback boot path
-     # Copy systemd-boot EFI binary to the default/fallback boot path
+-    # Copy systemd-boot EFI binary to the default/fallback boot path
 -    install -m 0644 -- "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" \
++    # Copy shim EFI binary to the default/fallback boot path
 +    install -m 0644 -- "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi" \
          "${isofs_dir}/EFI/BOOT/BOOTx64.EFI"
 +    install -m 0644 -- "${pacstrap_dir}/usr/share/shim-signed/mmx64.efi" \
@@ -188,4 +188,44 @@
 +    fi
  
      # Copy systemd-boot configuration files
-     install -d -m 0755 -- "${isofs_dir}/loader/entries"
+     _run_once _make_common_bootmode_systemd-boot_conf.isofs
+@@ -948,9 +1032,17 @@
+ 
+     _run_once _make_common_bootmode_systemd-boot
+ 
+-    # Copy systemd-boot EFI binary to the default/fallback boot path
++    # Copy shim EFI binary to the default/fallback boot path
++    mcopy -i "${efibootimg}" \
++        "${pacstrap_dir}/usr/share/shim-signed/shimia32.efi" ::/EFI/BOOT/BOOTIA32.EFI
++    mcopy -i "${efibootimg}" \
++        "${pacstrap_dir}/usr/share/shim-signed/mmia32.efi" ::/EFI/BOOT/mmia32.efi
++    # Copy systemd-boot EFI binary as grubia32.efi chainloaded by shimia32.efi
+     mcopy -i "${efibootimg}" \
+-        "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootia32.efi" ::/EFI/BOOT/BOOTIA32.EFI
++        "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootia32.efi" ::/EFI/BOOT/grubia32.EFI
++    if [[ -f DB.cer ]] ;then
++        mcopy -i "${efibootimg}" DB.cer ::/EFI/BOOT/DB.cer
++    fi
+ 
+     # Copy systemd-boot configuration files
+     _run_once _make_common_bootmode_systemd-boot_conf.esp
+@@ -979,9 +1071,17 @@
+     _msg_info "Preparing an /EFI directory for the ISO 9660 file system..."
+     install -d -m 0755 -- "${isofs_dir}/EFI/BOOT"
+ 
+-    # Copy systemd-boot EFI binary to the default/fallback boot path
+-    install -m 0644 -- "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootia32.efi" \
++    # Copy shim EFI binary to the default/fallback boot path
++    install -m 0644 -- "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi" \
+         "${isofs_dir}/EFI/BOOT/BOOTIA32.EFI"
++    install -m 0644 -- "${pacstrap_dir}/usr/share/shim-signed/mmia32.efi" \
++        "${isofs_dir}/EFI/BOOT/mmia32.efi"
++    # Copy systemd-boot EFI binary as grubia32.efi chainloaded by shimia32.efi
++    install -m 0644 -- "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootia32.efi" \
++        "${isofs_dir}/EFI/BOOT/grubia32.efi"
++    if [[ -f DB.cer ]] ;then
++        install -m 0644 -- DB.cer "${isofs_dir}/EFI/BOOT/DB.cer"
++    fi
+ 
+     # Copy systemd-boot configuration files
+     _run_once _make_common_bootmode_systemd-boot_conf.isofs

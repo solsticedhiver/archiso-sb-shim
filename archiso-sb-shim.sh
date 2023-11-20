@@ -74,6 +74,7 @@ repo-add custom.db.tar.gz shim-signed-*.pkg.*
 cd $cwd
 echo ":: Creating custom archiso profile"
 work=`mktemp -d $cwd/workXXXXXX`
+echo "Using $work as work directory"
 
 echo ":: Copying certificates"
 cp DB.{key,crt,cer} $work 2>/dev/null
@@ -91,6 +92,7 @@ cp /usr/bin/mkarchiso .
 patch -p0 -i $cwd/mkarchiso.patch
 
 out=`mktemp -d /tmp/outXXXXXX.d`
+echo "Using $out as output directory"
 echo ":: Running mkarchiso (as root)"
 if [[ "$verbose" == "true" ]] ;then
 	sudo ./mkarchiso -v -o $cwd -w $out prof
