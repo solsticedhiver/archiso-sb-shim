@@ -1,11 +1,17 @@
 # archiso-sb-shim
 This repo attempts to provide an easy way to create an *Archlinux Live CD/USB ISO* ready to run on a **Secure Boot** enabled system, using the *shim* method with your **own keys**.
 
-But for this to work, you will need to already have installed your own keys in the **MOK** list with `mokutil`.
+But for this to work, before booting the *CD/USB key*, you will need to already have installed **your own keys** in the EFI firmware via the **MOK** list with `mokutil`.
 
-Or, if you put your *DER certificate* in the current directory (named `DB.cer`), then it will be included in the *ESP* of the *archiso*, and you will be able to enroll it during the boot of the ISO.
+Or, if you put your *DER certificate* in the current directory (named `DB.cer`), then it will be included in the *ESP* of the *archiso*, and you will be able to enroll it during the first boot of the ISO. and then reboot.
 
-NOTE: This will not install an archlinux ready to boot with Secure Boot though. You will have to complete the needed steps to make it work, by yourself. This would mean doing almost the same thing that here aka. install sbsigntools, shim-signed, and mokutil, and your keys into the shim MOK list.
+IMPORTANT NOTE: This will not install an archlinux ready to boot with Secure Boot though. You will have to complete the needed steps to make it work, by yourself.
+This means follow the [arch wiki](https://wiki.archlinux.org/index.php/Unified_Extensible_Firmware_Interface/Secure_Boot) to install a method to boot with Secure Boot enabled.
+
+If using the shim method, you will have to do almost the same thing that was done with the ISO ie.
+  - install sbsigntools, shim-signed, and mokutil
+  - and then your keys into the shim MOK list
+  - and sign the kernel, and your bootloader
 
 ## Scripted method
 The script `archiso-sb-shim.sh` automates the method described below. This is a very basic script; use at your own risk.
