@@ -65,8 +65,7 @@ build_package() {
 	BUILDDIR="." PKGDEST="." SRCDEST="." SRCPKGDEST="." makepkg
 	mv $1-*.pkg.* ..
 }
-#build_package shim-signed
-cp shim-signed*.pkg.* $customd
+build_package shim-signed
 
 cd $customd
 echo ":: Creating custom local repo"

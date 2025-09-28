@@ -6,12 +6,15 @@ But for this to work, before booting the *CD/USB key*, you will need to already 
 Or, if you put your *DER certificate* in the current directory (named `DB.cer`), then it will be included in the *ESP* of the *archiso*, and you will be able to enroll it during the first boot of the ISO. and then reboot.
 
 IMPORTANT NOTE: This will not install an archlinux ready to boot with Secure Boot though. You will have to complete the needed steps to make it work, by yourself.
-This means follow the [arch wiki](https://wiki.archlinux.org/index.php/Unified_Extensible_Firmware_Interface/Secure_Boot) to install a method to boot with Secure Boot enabled.
+This means following the [arch wiki](https://wiki.archlinux.org/index.php/Unified_Extensible_Firmware_Interface/Secure_Boot) to install a method to boot with Secure Boot enabled.
 
 If using the shim method, you will have to do almost the same thing that was done with the ISO ie.
   - install sbsigntools, shim-signed, and mokutil
   - and then your keys into the shim MOK list
   - and sign the kernel, and your bootloader
+
+WARNING: **IA32 EFI boot is not supported anymore because neither ubuntu nor fedora provide the needed shim ia32 signed binaries**
+IA32 EFI are quite rare nowaydays and if you boot such a machine with the patched iso, *Secure Boot* will not be supported and the boot will fail.
 
 ## Scripted method
 The script `archiso-sb-shim.sh` automates the method described below. This is a very basic script; use at your own risk.

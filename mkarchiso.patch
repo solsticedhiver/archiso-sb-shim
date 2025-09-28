@@ -19,66 +19,6 @@
  }
  
  # Customize installation.
-@@ -701,11 +713,18 @@
-         --locales="en@quot" \
-         --themes="" \
-         --sbat=/usr/share/grub/sbat.csv \
--        --disable-shim-lock \
-         -o "${work_dir}/BOOTIA32.EFI" "boot/grub/grub.cfg=${work_dir}/grub-embed.cfg"
-+
-+    sbsign --key DB.key --cert DB.crt --output "${work_dir}/BOOTIA32.EFI" "${work_dir}/BOOTIA32.EFI"
-+
-     # Add GRUB to the list of files used to calculate the required FAT image size.
-     efiboot_files+=("${work_dir}/BOOTIA32.EFI"
-+                    "${pacstrap_dir}/usr/share/shim-signed/shimia32.efi"
-+                    "${pacstrap_dir}/usr/share/shim-signed/mmia32.efi"
-                     "${pacstrap_dir}/usr/share/edk2-shell/ia32/Shell_Full.efi")
-+    if [[ -f DB.cer ]] ;then
-+        efiboot_files+=(DB.cer)
-+    fi
- 
-     if [[ " ${bootmodes[*]} " =~ uefi-x64.systemd-boot.esp ]]; then
-         # TODO: Remove this branch.
-@@ -718,8 +737,17 @@
-         _make_efibootimg "$efiboot_imgsize"
-     fi
- 
--    # Copy GRUB EFI binary to the default/fallback boot path
--    mcopy -i "${efibootimg}" "${work_dir}/BOOTIA32.EFI" ::/EFI/BOOT/BOOTIA32.EFI
-+    # Copy shim EFI binary to the default/fallback boot path
-+     mcopy -i "${efibootimg}" \
-+        "${pacstrap_dir}/usr/share/shim-signed/shimia32.efi" ::/EFI/BOOT/BOOTIA32.EFI
-+    mcopy -i "${efibootimg}" \
-+        "${pacstrap_dir}/usr/share/shim-signed/mmia32.efi" ::/EFI/BOOT/mmia32.efi
-+    # Copy GRUB EFI binary as grubia32.efi chainloaded by shimia32.efi
-+    mcopy -i "${efibootimg}" "${work_dir}/BOOTIA32.EFI" ::/EFI/BOOT/grubia32.efi
-+
-+    if [[ -f DB.cer ]] ;then
-+        mcopy -o -i "${efibootimg}" DB.cer ::/EFI/BOOT/DB.cer
-+    fi
- 
-     # Copy GRUB files
-     _run_once _make_common_bootmode_grub_copy_to_isofs
-@@ -746,8 +774,18 @@
-     _msg_info "Preparing an /EFI directory for the ISO 9660 file system..."
-     install -d -m 0755 -- "${isofs_dir}/EFI/BOOT"
- 
-+    # Copy shim EFI binary to the default/fallback boot path
-+    install -m 0644 -- "${pacstrap_dir}/usr/share/shim-signed/shimia32.efi" \
-+        "${isofs_dir}/EFI/BOOT/BOOTIA32.EFI"
-+    install -m 0644 -- "${pacstrap_dir}/usr/share/shim-signed/mmia32.efi" \
-+        "${isofs_dir}/EFI/BOOT/mmia32.efi"
-+
-     # Copy GRUB EFI binary to the default/fallback boot path
--    install -m 0644 -- "${work_dir}/BOOTIA32.EFI" "${isofs_dir}/EFI/BOOT/BOOTIA32.EFI"
-+    install -m 0644 -- "${work_dir}/BOOTIA32.EFI" "${isofs_dir}/EFI/BOOT/grubia32.efi"
-+
-+    if [[ -f DB.cer ]] ;then
-+        install -m 0644 DB.cer "${isofs_dir}/EFI/BOOT/DB.cer"
-+    fi
- 
-     # Copy GRUB configuration files
-     _run_once _make_common_bootmode_grub_copy_to_isofs
 @@ -778,19 +816,35 @@
          --locales="en@quot" \
          --themes="" \
@@ -185,46 +125,6 @@
 +        "${isofs_dir}/EFI/BOOT/grubx64.efi"
 +    if [[ -f DB.cer ]] ;then
 +        install -m 0644 DB.cer "${isofs_dir}/EFI/BOOT/DB.cer"
-+    fi
- 
-     # Copy systemd-boot configuration files
-     _run_once _make_common_bootmode_systemd-boot_conf.isofs
-@@ -983,9 +1067,17 @@
-     # Prepare a FAT image for the EFI system partition
-     _run_once _make_common_bootmode_systemd-boot
- 
--    # Copy systemd-boot EFI binary to the default/fallback boot path
-+    # Copy shim EFI binary to the default/fallback boot path
-+    mcopy -i "${efibootimg}" \
-+        "${pacstrap_dir}/usr/share/shim-signed/shimia32.efi" ::/EFI/BOOT/BOOTIA32.EFI
-+    mcopy -i "${efibootimg}" \
-+        "${pacstrap_dir}/usr/share/shim-signed/mmia32.efi" ::/EFI/BOOT/mmia32.efi
-+    # Copy systemd-boot EFI binary as grubia32.efi chainloaded by shimia32.efi
-     mcopy -i "${efibootimg}" \
--        "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootia32.efi" ::/EFI/BOOT/BOOTIA32.EFI
-+        "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootia32.efi" ::/EFI/BOOT/grubia32.EFI
-+    if [[ -f DB.cer ]] ;then
-+        mcopy -o -i "${efibootimg}" DB.cer ::/EFI/BOOT/DB.cer
-+    fi
- 
-     # Copy systemd-boot configuration files
-     _run_once _make_common_bootmode_systemd-boot_conf.esp
-@@ -1017,9 +1109,17 @@
-     _msg_info "Preparing an /EFI directory for the ISO 9660 file system..."
-     install -d -m 0755 -- "${isofs_dir}/EFI/BOOT"
- 
--    # Copy systemd-boot EFI binary to the default/fallback boot path
--    install -m 0644 -- "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootia32.efi" \
-+    # Copy shim EFI binary to the default/fallback boot path
-+    install -m 0644 -- "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi" \
-         "${isofs_dir}/EFI/BOOT/BOOTIA32.EFI"
-+    install -m 0644 -- "${pacstrap_dir}/usr/share/shim-signed/mmia32.efi" \
-+        "${isofs_dir}/EFI/BOOT/mmia32.efi"
-+    # Copy systemd-boot EFI binary as grubia32.efi chainloaded by shimia32.efi
-+    install -m 0644 -- "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootia32.efi" \
-+        "${isofs_dir}/EFI/BOOT/grubia32.efi"
-+    if [[ -f DB.cer ]] ;then
-+        install -m 0644 -- DB.cer "${isofs_dir}/EFI/BOOT/DB.cer"
 +    fi
  
      # Copy systemd-boot configuration files
