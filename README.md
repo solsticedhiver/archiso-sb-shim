@@ -3,7 +3,7 @@ This repo attempts to provide an easy way to create an *Archlinux Live CD/USB IS
 
 But for this to work, before booting the *CD/USB key*, you will need to already have installed **your own keys** in the EFI firmware via the **MOK** list with `mokutil`.
 
-Or, if you put your *DER certificate* in the current directory (named `DB.cer`), then it will be included in the *ESP* of the *archiso*, and you will be able to enroll it during the first boot of the ISO. and then reboot.
+Or, if you put your *DER certificate* in the current directory (named `MOK.cer`), then it will be included in the *ESP* of the *archiso*, and you will be able to enroll it during the first boot of the ISO. and then reboot.
 
 IMPORTANT NOTE: This will not install an archlinux ready to boot with Secure Boot though. You will have to complete the needed steps to make it work, by yourself.
 This means following the [arch wiki](https://wiki.archlinux.org/index.php/Unified_Extensible_Firmware_Interface/Secure_Boot) to install a method to boot with Secure Boot enabled.
@@ -29,7 +29,7 @@ As described in the [arch wiki](https://wiki.archlinux.org/index.php/Unified_Ext
 
 **Keep** the *generated packages* around, as we will need them later on.
 
-Copy your keys (`DB.key` and `DB.crt`) to the current directory. Look at the [wiki](https://wiki.archlinux.org/index.php/Unified_Extensible_Firmware_Interface/Secure_Boot#Set_up_shim) on how to do that if you don't have ones.
+Copy your keys (`MOK.key` and `MOK.crt`) to the current directory. Look at the [wiki](https://wiki.archlinux.org/index.php/Unified_Extensible_Firmware_Interface/Secure_Boot#Set_up_shim) on how to do that if you don't have ones.
 
 ### Patch mkarchiso
 

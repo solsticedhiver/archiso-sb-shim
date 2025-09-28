@@ -2,8 +2,8 @@
 
 # This script will build an archiso ready to be run on a Secure Boot enabled PC/laptop.
 
-# It expects your certificate (DB.key, DB.crt) to be in the current directory.
-# If you want to be able to enroll your certificate, also include DB.cer, so that the script finds it
+# It expects your certificate (MOK.key, MOK.crt) to be in the current directory.
+# If you want to be able to enroll your certificate, also include MOK.cer, so that the script finds it
 # and add it to the ESP of the generated ISO
 
 # It will create
@@ -42,12 +42,12 @@ if ! command -v sbsign &> /dev/null; then
 	exit 1
 fi
 
-if [[ ! -f DB.crt ]] ;then
-	echo "DB.crt not found" >&2
+if [[ ! -f MOK.crt ]] ;then
+	echo "MOK.crt not found" >&2
 	exit 1
 fi
-if [[ ! -f DB.key ]] ;then
-	echo "DB.key not found" >&2
+if [[ ! -f MOK.key ]] ;then
+	echo "MOK.key not found" >&2
 	exit 1
 fi
 
@@ -77,7 +77,7 @@ work=`mktemp -d $cwd/workXXXXXX`
 echo "Using $work as work directory"
 
 echo ":: Copying certificates"
-cp DB.{key,crt,cer} $work 2>/dev/null
+cp MOK.{key,crt,cer} $work 2>/dev/null
 
 cd $work
 cp -r /usr/share/archiso/configs/releng prof
