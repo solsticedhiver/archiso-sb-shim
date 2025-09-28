@@ -59,6 +59,11 @@ build_package() {
 	pkg=$1.tar.gz
 	echo ":: Downloading $1 from AUR"
 	wget --quiet "https://aur.archlinux.org/cgit/aur.git/snapshot/$pkg"
+	ret=$?
+	if [[ $ret -ne 0 ]] ;then
+		echo "Error: couldn't download $pkg from AUR"
+		exit 1
+	fi
 	tar xzf $pkg
 	echo ":: Building $1 package"
 	cd $1
