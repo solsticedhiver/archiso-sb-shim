@@ -1,6 +1,6 @@
---- mkarchiso	2025-09-26 16:10:21.000000000 +0200
-+++ mkarchiso	2025-09-28 19:55:38.783124296 +0200
-@@ -370,6 +370,16 @@
+--- mkarchiso	2026-02-04 23:50:10.914863568 +0100
++++ mkarchiso	2026-02-04 23:50:42.188306309 +0100
+@@ -376,6 +376,16 @@
      fi
  
      _msg_info "Done! Packages installed successfully."
@@ -9,108 +9,120 @@
 +    for kernel in "${pacstrap_dir}/boot/vmlinuz-"*; do
 +        sbsign --key MOK.key --cert MOK.crt --output "$kernel" "$kernel"
 +    done
-+    # signing grubx64.efi and shell once and for all
-+    sbsign --key MOK.key --cert MOK.crt --output "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" \
-+        "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi"
-+    sbsign --key MOK.key --cert MOK.crt --output "${pacstrap_dir}/usr/share/edk2-shell/x64/Shell_Full.efi" \
-+        "${pacstrap_dir}/usr/share/edk2-shell/x64/Shell_Full.efi"
++    # signing systemd-boot and shell once and for all
++    sbsign --key MOK.key --cert MOK.crt --output "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-boot${uefi_arch[$arch],,}.efi" \
++        "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-boot${uefi_arch[$arch],,}.efi"
++    sbsign --key MOK.key --cert MOK.crt --output "${pacstrap_dir}/usr/share/edk2-shell/${uefi_arch[$arch],,}/Shell_Full.efi" \
++        "${pacstrap_dir}/usr/share/edk2-shell/${uefi_arch[$arch],,}/Shell_Full.efi"
  }
  
  # Customize installation.
-@@ -689,8 +699,8 @@
+@@ -696,11 +706,18 @@
          --locales="en@quot" \
          --themes="" \
          --sbat=/usr/share/grub/sbat.csv \
 -        --disable-shim-lock \
-         -o "${work_dir}/BOOTx64.EFI" "boot/grub/grub.cfg=${work_dir}/grub-embed.cfg"
-+    sbsign --key MOK.key --cert MOK.crt --output "${work_dir}/BOOTx64.EFI" "${work_dir}/BOOTx64.EFI"
-     grub-mkstandalone -O i386-efi \
-         --modules="${grubmodules[*]}" \
-         --locales="en@quot" \
-@@ -702,8 +712,13 @@
+         -o "${work_dir}/BOOT${uefi_arch[$arch]}.EFI" "boot/grub/grub.cfg=${work_dir}/grub-embed.cfg"
++    sbsign --key MOK.key --cert MOK.crt --output "${work_dir}/BOOT${uefi_arch[$arch]}.EFI" "${work_dir}/BOOT${uefi_arch[$arch]}.EFI"
      # Add GRUB to the list of files used to calculate the required FAT image size.
-     efiboot_files+=("${work_dir}/BOOTx64.EFI"
-                     "${work_dir}/BOOTIA32.EFI"
-+                    "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi"
-+                    "${pacstrap_dir}/usr/share/shim-signed/mmx64.efi"
-                     "${pacstrap_dir}/usr/share/edk2-shell/x64/Shell_Full.efi"
-                     "${pacstrap_dir}/usr/share/edk2-shell/ia32/Shell_Full.efi")
+     efiboot_files+=("${work_dir}/BOOT${uefi_arch[$arch]}.EFI"
+                     "${pacstrap_dir}/usr/share/edk2-shell/${uefi_arch[$arch],,}/Shell_Full.efi")
++    if [[ "$arch" == 'x86_64' ]]; then
++        efiboot_files+=("${pacstrap_dir}/usr/share/shim-signed/shimx64.efi"
++                        "${pacstrap_dir}/usr/share/shim-signed/mmx64.efi")
++    fi
 +    if [[ -f MOK.cer ]] ;then
 +        efiboot_files+=(MOK.cer)
 +    fi
  
-     efiboot_imgsize="$(du -bcs -- "${efiboot_files[@]}" 2>/dev/null | awk 'END { print $1 }')"
- 
-@@ -715,10 +730,24 @@
-     # This is not related to El Torito booting and no firmware uses these files.
+     # Create IA32 EFI binary for mixed-mode booting on x86_64 systems with IA32 UEFI
+     if [[ "$arch" == 'x86_64' ]]; then
+@@ -724,8 +741,27 @@
      install -d -m 0755 -- "${isofs_dir}/EFI/BOOT"
  
--    # Copy GRUB EFI binary to the default/fallback boot path
--    mcopy -i "${efibootimg}" "${work_dir}/BOOTx64.EFI" ::/EFI/BOOT/BOOTx64.EFI
-+    # Copy shim EFI binary to the default/fallback boot path
-+    mcopy -i "${efibootimg}" \
-+        "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi" ::/EFI/BOOT/BOOTx64.EFI
-+    install -m 0644 -- "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi" "${isofs_dir}/EFI/BOOT/BOOTx64.EFI"
-+    mcopy -i "${efibootimg}" \
-+        "${pacstrap_dir}/usr/share/shim-signed/mmx64.efi" ::/EFI/BOOT/mmx64.efi
-+    install -m 0644 -- "${pacstrap_dir}/usr/share/shim-signed/mmx64.efi" "${isofs_dir}/EFI/BOOT/mmx64.efi"
-+    # Copy GRUB EFI binary as grubx64.efi chainloaded by shimx64.efi
-+    mcopy -i "${efibootimg}" "${work_dir}/BOOTx64.EFI" ::/EFI/BOOT/grubx64.efi
-+    install -m 0644 -- "${work_dir}/BOOTx64.EFI" "${isofs_dir}/EFI/BOOT/grubx64.efi"
+     # Copy GRUB EFI binary to the default/fallback boot path
+-    mcopy -i "${efibootimg}" "${work_dir}/BOOT${uefi_arch[$arch]}.EFI" "::/EFI/BOOT/BOOT${uefi_arch[$arch]}.EFI"
+-    install -m 0644 -- "${work_dir}/BOOT${uefi_arch[$arch]}.EFI" "${isofs_dir}/EFI/BOOT/BOOT${uefi_arch[$arch]}.EFI"
++    if [[ "$arch" == 'x86_64' ]]; then
++        # Copy shim EFI binary to the default/fallback boot path
++        mcopy -i "${efibootimg}" \
++            "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi" ::/EFI/BOOT/BOOTx64.EFI
++        install -m 0644 -- "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi" "${isofs_dir}/EFI/BOOT/BOOTx64.EFI"
++        mcopy -i "${efibootimg}" \
++            "${pacstrap_dir}/usr/share/shim-signed/mmx64.efi" ::/EFI/BOOT/mmx64.efi
++        install -m 0644 -- "${pacstrap_dir}/usr/share/shim-signed/mmx64.efi" "${isofs_dir}/EFI/BOOT/mmx64.efi"
++        # Copy GRUB EFI binary as grubx64.efi chainloaded by shimx64.efi
++        mcopy -i "${efibootimg}" "${work_dir}/BOOT${uefi_arch[$arch]}.EFI" ::/EFI/BOOT/grubx64.efi
++        install -m 0644 -- "${work_dir}/BOOT${uefi_arch[$arch]}.EFI" "${isofs_dir}/EFI/BOOT/grubx64.efi"
 +
-+    # Copy MOK certificate
-+    if [[ -f MOK.cer ]] ;then
-+        mcopy -o -i "${efibootimg}" MOK.cer ::/EFI/MOK.cer
-+        install -m 0644 -- "MOK.cer" "${isofs_dir}/EFI/MOK.cer"
++        # Copy MOK certificate
++        if [[ -f MOK.cer ]] ;then
++            mcopy -o -i "${efibootimg}" MOK.cer ::/EFI/MOK.cer
++            install -m 0644 -- "MOK.cer" "${isofs_dir}/EFI/MOK.cer"
++        fi
++    else
++        mcopy -i "${efibootimg}" "${work_dir}/BOOT${uefi_arch[$arch]}.EFI" "::/EFI/BOOT/BOOT${uefi_arch[$arch]}.EFI"
++        install -m 0644 -- "${work_dir}/BOOT${uefi_arch[$arch]}.EFI" "${isofs_dir}/EFI/BOOT/BOOT${uefi_arch[$arch]}.EFI"
 +    fi
-+
-     mcopy -i "${efibootimg}" "${work_dir}/BOOTIA32.EFI" ::/EFI/BOOT/BOOTIA32.EFI
--    install -m 0644 -- "${work_dir}/BOOTx64.EFI" "${isofs_dir}/EFI/BOOT/BOOTx64.EFI"
-     install -m 0644 -- "${work_dir}/BOOTIA32.EFI" "${isofs_dir}/EFI/BOOT/BOOTIA32.EFI"
+     # Set up mixed mode booting for x86_64 systems with IA32 UEFI
+     if [[ "$arch" == 'x86_64' ]]; then
+         mcopy -i "${efibootimg}" "${work_dir}/BOOTIA32.EFI" ::/EFI/BOOT/BOOTIA32.EFI
+@@ -783,11 +819,26 @@
+ _make_common_bootmode_uefi.systemd-boot_copy_files() {
+     local target_arch="$1"
  
-     # Copy GRUB files
-@@ -790,6 +819,8 @@
-     efiboot_files+=("${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi"
-                     "${pacstrap_dir}/usr/share/edk2-shell/x64/Shell_Full.efi"
-                     "${pacstrap_dir}/boot/memtest86+/memtest.efi"
-+                    "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi"
-+                    "${pacstrap_dir}/usr/share/shim-signed/mmx64.efi"
-                     "${pacstrap_dir}/usr/share/licenses/spdx/GPL-2.0-only.txt"
-                     "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootia32.efi"
-                     "${pacstrap_dir}/usr/share/edk2-shell/ia32/Shell_Full.efi"
-@@ -797,6 +828,9 @@
+-    # Copy systemd-boot EFI binary to the default/fallback boot path
+-    mcopy -i "${efibootimg}" \
+-        "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-boot${target_arch,,}.efi" "::/EFI/BOOT/BOOT${target_arch}.EFI"
+-    install -m 0644 -- "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-boot${target_arch,,}.efi" \
+-        "${isofs_dir}/EFI/BOOT/BOOT${target_arch}.EFI"
++    if [[ "$target_arch" == 'x64' && "$arch" == 'x86_64' ]]; then
++        # Copy shim EFI binary to the default/fallback boot path
++        mcopy -i "${efibootimg}" \
++            "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi" ::/EFI/BOOT/BOOTx64.EFI
++        install -m 0644 -- "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi" "${isofs_dir}/EFI/BOOT/BOOTx64.EFI"
++        mcopy -i "${efibootimg}" \
++            "${pacstrap_dir}/usr/share/shim-signed/mmx64.efi" ::/EFI/BOOT/mmx64.efi
++        install -m 0644 -- "${pacstrap_dir}/usr/share/shim-signed/mmx64.efi" "${isofs_dir}/EFI/BOOT/mmx64.efi"
++        # Copy systemd-boot EFI binary as grubx64.efi chainloaded by shimx64.efi
++        mcopy -i "${efibootimg}" \
++            "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-boot${target_arch,,}.efi" ::/EFI/BOOT/grubx64.efi
++        install -m 0644 -- "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-boot${target_arch,,}.efi" \
++            "${isofs_dir}/EFI/BOOT/grubx64.efi"
++    else
++        # Copy systemd-boot EFI binary to the default/fallback boot path
++        mcopy -i "${efibootimg}" \
++            "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-boot${target_arch,,}.efi" "::/EFI/BOOT/BOOT${target_arch}.EFI"
++        install -m 0644 -- "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-boot${target_arch,,}.efi" \
++            "${isofs_dir}/EFI/BOOT/BOOT${target_arch}.EFI"
++    fi
+ 
+     # edk2-shell based UEFI shell
+     # shell*.efi is picked up automatically when on /
+@@ -853,6 +904,10 @@
                      "${pacstrap_dir}/boot/vmlinuz-"*
                      "${pacstrap_dir}/boot/initramfs-"*".img"
                      "${_available_ucodes[@]}")
++    if [[ "$arch" == 'x86_64' ]]; then
++        efiboot_files+=("${pacstrap_dir}/usr/share/shim-signed/shimx64.efi"
++                        "${pacstrap_dir}/usr/share/shim-signed/mmx64.efi")
++    fi
+ 
+     # Files specific to x86_64: IA32 UEFI binaries for mixed mode booting, memtest86+
+     if [[ "$arch" == 'x86_64' ]]; then
+@@ -861,6 +916,9 @@
+                         "${pacstrap_dir}/boot/memtest86+/memtest.efi"
+                         "${pacstrap_dir}/usr/share/licenses/spdx/GPL-2.0-only.txt")
+     fi
 +    if [[ -f MOK.cer ]] ;then
 +        efiboot_files+=(MOK.cer)
 +    fi
-     efiboot_imgsize="$(du -bcs -- "${efiboot_files[@]}" 2>/dev/null | awk 'END { print $1 }')"
      # Create a FAT image for the EFI system partition
-     _make_efibootimg "$efiboot_imgsize"
-@@ -806,16 +840,29 @@
-     # This is not related to El Torito booting and no firmware uses these files.
-     install -d -m 0755 -- "${isofs_dir}/EFI/BOOT"
+     _make_efibootimg
  
--    # Copy systemd-boot EFI binary to the default/fallback boot path
-+    # Copy shim EFI binary to the default/fallback boot path
-+    mcopy -i "${efibootimg}" \
-+        "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi" ::/EFI/BOOT/BOOTx64.EFI
-+    install -m 0644 -- "${pacstrap_dir}/usr/share/shim-signed/shimx64.efi" "${isofs_dir}/EFI/BOOT/BOOTx64.EFI"
-     mcopy -i "${efibootimg}" \
--        "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" ::/EFI/BOOT/BOOTx64.EFI
-+        "${pacstrap_dir}/usr/share/shim-signed/mmx64.efi" ::/EFI/BOOT/mmx64.efi
-+    install -m 0644 -- "${pacstrap_dir}/usr/share/shim-signed/mmx64.efi" "${isofs_dir}/EFI/BOOT/mmx64.efi"
-+    # Copy systemd-boot EFI binary as grubx64.efi chainloaded by shimx64.efi
-+    mcopy -i "${efibootimg}" \
-+        "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" ::/EFI/BOOT/grubx64.efi
-     install -m 0644 -- "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" \
--        "${isofs_dir}/EFI/BOOT/BOOTx64.EFI"
-+        "${isofs_dir}/EFI/BOOT/grubx64.efi"
-     mcopy -i "${efibootimg}" \
-         "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootia32.efi" ::/EFI/BOOT/BOOTIA32.EFI
-     install -m 0644 -- "${pacstrap_dir}/usr/lib/systemd/boot/efi/systemd-bootia32.efi" \
-         "${isofs_dir}/EFI/BOOT/BOOTIA32.EFI"
+@@ -880,6 +938,12 @@
+         _make_common_bootmode_uefi.systemd-boot_copy_files 'IA32'
+     fi
  
 +    # Copy MOK certificate
 +    if [[ -f MOK.cer ]] ;then
@@ -118,6 +130,6 @@
 +        install -m 0644 -- "MOK.cer" "${isofs_dir}/EFI/MOK.cer"
 +    fi
 +
-     # Copy systemd-boot configuration files
-     mcopy -i "${efibootimg}" -s "${work_dir}/loader" ::/
-     cp -r --remove-destination -- "${work_dir}/loader" "${isofs_dir}/"
+     # Copy kernel and initramfs to FAT image.
+     # systemd-boot can only access files from the EFI system partition it was launched from.
+     _run_once _make_boot_on_fat
