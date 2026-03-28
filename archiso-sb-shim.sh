@@ -9,11 +9,11 @@
 # It will create
 # - a directory /tmp/customXXXXXX.d to build package and host a custom repo
 # - a working directory workXXXXX in the current directory
-# - a directory for mkarchiso /tmp/outXXXXXX.d
+# - a directory for mkarchiso output outXXXXXX in the current directory
 # and output the resulting iso in the current directory
 # and then clean-up those tmp dirs
 
-# DEPENDS ON: sudo, findmnt [util-linux], sbsign [sbsigntools], mkarchiso [archiso] (obviously)
+# DEPENDS ON: sudo, sbsign [sbsigntools], mkarchiso [archiso] (obviously)
 
 usage() {
 	echo "Usage: $0 [-h|-v]"
@@ -96,20 +96,14 @@ echo ":: Patching private mkarchiso version"
 cp /usr/bin/mkarchiso .
 patch -p0 -i $cwd/mkarchiso.patch
 
-out=`mktemp -d /tmp/outXXXXXX.d`
+out=`mktemp -u $cwd/outXXXXXX`
 echo "Using $out as output directory"
 echo ":: Running mkarchiso (as root)"
 if [[ "$verbose" == "true" ]] ;then
-	sudo ./mkarchiso -v -o $cwd -w $out prof
+	sudo ./mkarchiso -v -o $cwd -w $out -r prof
 else
-	sudo ./mkarchiso -o $cwd -w $out prof
+	sudo ./mkarchiso -o $cwd -w $out -r prof
 fi
 
-echo ":: Cleaning up"
-if ! findmnt|grep -q $out; then
-	sudo rm -rf $out 2>/dev/null
-else
-	echo "There are left-over files in $out. Please be careful to unmount any mount before deleting the directory. See https://wiki.archlinux.org/index.php/Archiso#Removal_of_work_directory" >&2
-fi
 rm -rf $work
 rm -rf $customd
