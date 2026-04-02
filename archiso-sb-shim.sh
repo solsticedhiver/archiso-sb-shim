@@ -13,7 +13,7 @@
 # and output the resulting iso in the current directory
 # and then clean-up those tmp dirs
 
-# DEPENDS ON: sudo, sbsign [sbsigntools], mkarchiso [archiso] (obviously)
+# DEPENDS ON: sudo, patch, sbsign [sbsigntools], mkarchiso [archiso] (obviously)
 
 usage() {
 	echo "Usage: $0 [-h|-v]"
@@ -95,6 +95,11 @@ sed -i '$s|/home/custompkgs|'$customd'|' prof/pacman.conf
 echo ":: Patching private mkarchiso version"
 cp /usr/bin/mkarchiso .
 patch -p0 -i $cwd/mkarchiso.patch
+ret=$?
+if [ $ret -eq 2 ] ;then
+	echo "Error: patching the local mkarchiso failed!" >&2
+	exit 2
+fi
 
 out=`mktemp -u $cwd/outXXXXXX`
 echo "Using $out as output directory"
